@@ -1,72 +1,80 @@
 -- LXL lua mod for localchat
 -- https://github.com/Development-studio/localchat
+-- version = 0.3.1
 
--- local json = require "json"
+Cconfig = data.openConfig('.\\plugins\\localchat\\config.json', 'json', '{}')
 
-local DISTANCE = 100		-- local chat radius in blocks
-local OP_PREFIX = "[§cA§r]"
+if Cconfig:get('DISTANCE') == nil then
+    Cconfig:set('DISTANCE', 100)
+    Cconfig:set('OP_PREFIX', "[§cA§r]")
+    Cconfig:set('cnames', {["Steve"] = "§r§cAlex§r§r", ["Alex"] = "§rSteve§r"})
+    Cconfig:set('prefixes', {["Steve"] = "§cViP", ["Alex"] = "§cTester"})
+end
 
-local cnames = {
-	["Steve"] = "§Hacker§r",
-	["Mike"] = "§fCoolMiner§r"
-}
+DISTANCE = Cconfig:get('DISTANCE')
+OP_PREFIX = Cconfig:get('OP_PREFIX')
+Cnames = Cconfig:get('cnames')
+Prefixes = Cconfig:get('prefixes')
 
-local prefixes = {
-	["Steve"] = "[§fOP§r]",
-	["Mike"] = "[§fmember§r]"
-}
+function Reload()
+    Cconfig:reload()
+    DISTANCE = Cconfig:get('DISTANCE')
+    OP_PREFIX = Cconfig:get('OP_PREFIX')
+    Cnames = Cconfig:get('cnames')
+    Prefixes = Cconfig:get('prefixes')
+end
 
 -- Cname
 function GetCname(pl)
-	local pref = ""
+    local pref = ""
+    -- local newpref = "§2[§r"..pref.."§2]§r "
 	local name = pl.name
-	local cname = name
+    local cname = name
 
-	if(prefixes[name] ~= nil) then
-		pref = prefixes[name]
-	else
-		if pl:isOP() then
-			pref = OP_PREFIX
-		end
-	end
+    if (Prefixes[name] ~= nil) then
+        pref = "§2[§r"..Prefixes[name].."§2]§r "
+        --pref = Prefixes[name]
+    else
+        if pl:isOP() then pref = OP_PREFIX end
+    end
 
-	if(cnames[name] ~= nil) then
-		cname = cnames[name]
-	end
-	
-	return pref .. cname
+    if (Cnames[name] ~= nil) then cname = Cnames[name] end
+
+    return pref .. cname
 end
 
 -- Local Broadcast
-function Square(a)
-	return a*a
+function Square(a) return a * a end
+
+function CheckDistance(from, to)
+    local pos1 = from.pos
+    local pos2 = to.pos
+    return Square(pos2.x - pos1.x) + Square(pos2.y - pos1.y) + Square(pos2.z - pos1.z) <= DISTANCE
 end
 
-function CheckDistance(from,to)
-	local pos1 = from.pos
-	local pos2 = to.pos
-	return Square(pos2.x-pos1.x) + Square(pos2.y-pos1.y) + Square(pos2.z-pos1.z) <= DISTANCE
-end
-
-function LocalBroadcast(from,text)
-	local players = mc.getOnlinePlayers()
-	for i, pl in ipairs(players) do
-		if pl:isOP() or CheckDistance(from,pl) then
-			pl:tell("§7Ⓛ <" .. GetCname(from) .. "> " .. text)
-		end
-	end
+function LocalBroadcast(from, text)
+    local players = mc.getOnlinePlayers()
+    for i, pl in ipairs(players) do if pl:isOP() or CheckDistance(from, pl) then pl:tell("§7Ⓛ §7" .. GetCname(from) .. "§7: " .. text) end end
 end
 
 -- Main
-mc.listen("onChat", function(player,text)
+mc.listen("onChat", function(player, text)
 
-    if(text:sub(1,1) == "!") then
-    	--global chat
-		mc.broadcast("§6Ⓖ§r <" .. GetCname(player) .. "> " .. text:sub(2))
+    if (text:sub(1, 1) == "!") then
+        -- global chat
+        mc.broadcast("§6Ⓖ§r " .. GetCname(player) .. "§r: " .. text:sub(2))
     else
-		--local chat
-		LocalBroadcast(player,text)
-	end
-	
-	return false
+        -- local chat
+        LocalBroadcast(player, text)
+    end
+
+    return false
 end)
+
+mc.regConsoleCmd("chatreload", "chatreload", function(pl)
+    Reload()
+    colorLog("green", "Chatreload")
+
+end)
+
+print('[\27[92mCRON\27[0m] \27[93mlocalchat loaded\27[0m')
