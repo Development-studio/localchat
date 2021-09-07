@@ -1,20 +1,11 @@
 # Local chat plugin
 
-## Requirements:
-
-json.lua lib (https://github.com/rxi/json.lua)
-
-
 
 ## Installation
 
-1. Put json.lua in plugins/lib directory.
-2. Put localchat.lua in plugins directory.
-3. Check localchat.lua source code: edit DISTANCE and OP_TAG vars if needed.
-4. Execute ```lxl reload``` command (as op) or restart the server.
-5. Don't forget to add tag (=OP_TAG) to operators for them to be able to get distant local chat messages (doesn't work between different dimensions atm).
+1. Put localchat. lua in the plugins directory.
+2. After the first launch, you can change the configuration file that will be located in the localchat folder for: if necessary, edit the DISTANCE and OP_TAG values. You can also add prefixes and change the name of the players
+3. Run the ```chatreload``` command in the console or restart the server.
+4. Don't forget to add a tag (=OP_TAG) to operators so that they can receive remote local chat messages (does not work between different atm dimensions).
 
-
-## Description
-
-Due to the absence of cname mod Lua API custom names set by cname command aren't shown in local/global chat. But you can set custom names and prefixes right in this mod. See prefixes and cnames tables in mod's source code as an example.
+Many thanks to `yqs112358` for the help in adapting the plugin to LXL.
