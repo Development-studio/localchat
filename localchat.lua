@@ -1,10 +1,9 @@
 -- LXL lua mod for localchat
--- https://github.com/
+-- https://github.com/Development-studio/localchat
 
-local json = require "json"
+-- local json = require "json"
 
 local DISTANCE = 100		-- local chat radius in blocks
-local OP_TAG = "admin"  -- use in-game command /tag <player> add <OP_TAG>
 local OP_PREFIX = "[§cA§r]"
 
 local cnames = {
@@ -17,41 +16,57 @@ local prefixes = {
 	["Mike"] = "[§fmember§r]"
 }
 
-
-function rawtext(content)
-	return json.encode({rawtext = {{text = content}} })
-end
-
-function get_cname(plname)
+-- Cname
+function GetCname(pl)
 	local pref = ""
-	local cname = pl.name
-	if(prefixes[pl.name] ~= nil) then
-		pref = prefixes[pl.name]
+	local name = pl.name
+	local cname = name
+
+	if(prefixes[name] ~= nil) then
+		pref = prefixes[name]
 	else
-		if(pl.isOP(pl.name)) then
+		if pl:isOP() then
 			pref = OP_PREFIX
 		end
 	end
-	if(cnames[pl.name] ~= nil) then
-		cname = cnames[pl.name]
+
+	if(cnames[name] ~= nil) then
+		cname = cnames[name]
 	end
+	
 	return pref .. cname
 end
 
+-- Local Broadcast
+function Square(a)
+	return a*a
+end
 
+function CheckDistance(from,to)
+	local pos1 = from.pos
+	local pos2 = to.pos
+	return Square(pos2.x-pos1.x) + Square(pos2.y-pos1.y) + Square(pos2.z-pos1.z) <= DISTANCE
+end
 
-mc.listen("onChat", function(name,text)
+function LocalBroadcast(from,text)
+	local players = mc.getOnlinePlayers()
+	for i, pl in ipairs(players) do
+		if pl:isOP() or CheckDistance(from,pl) then
+			pl:tell("§7Ⓛ <" .. GetCname(from) .. "> " .. text)
+		end
+	end
+end
 
-    if(text:sub(1,1) == "!")
-    then
+-- Main
+mc.listen("onChat", function(player,text)
+
+    if(text:sub(1,1) == "!") then
     	--global chat
-		mc.runcmd("tellraw @a " .. rawtext("§6Ⓖ§r " .. get_cname(name) .. ": " .. text:sub(2)))
+		mc.broadcast("§6Ⓖ§r <" .. GetCname(player) .. "> " .. text:sub(2))
     else
 		--local chat
-		mc.runcmd(string.format("execute \"%s\" ~ ~ ~ tellraw @a[r=%i] %s", name, DISTANCE, rawtext("§3Ⓛ§r " .. get_cname(name) .. ": " .. text)))
-		--send to ops (doesn't work if op is in different dimension)
-		mc.runcmd(string.format("execute \"%s\" ~ ~ ~ tellraw @a[rm=%i,tag=%s] %s", name, DISTANCE + 1, OP_TAG, rawtext("§7Ⓛ <" .. get_cname(name) .. "> " .. text)))
+		LocalBroadcast(player,text)
 	end
 	
-	return -1
+	return false
 end)
